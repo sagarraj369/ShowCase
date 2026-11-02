@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="code-view-card">
+
+        <h1>{{ code.title }}</h1>
+
+        <p>
+            Language: <strong>{{ code.language }}</strong>
+        </p>
+
+        <div class="view-header">
+
+            <span> READ-ONLY-MODE</span>
+
+            <button type="button" onclick="copyCode()">
+                 Copy Code
+            </button>
+
+        </div>
+
+        <pre class="readonly-code"><code id="codeContent">{{ code.code }}</code></pre>
+        <br />
+        <p id="copyMessage"></p>
+
+        <br />
+
+        <a href="{{ url_for('profile') }}">
+
+            ← Back to My Collection
+        </a>
+
+    </div>
+
+</div>
+
+<style>
+
+.code-view-card {
+    padding: 25px;
+    margin: 25px 0;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.06);
+}
+
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.view-header button {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #087eae;
+    color: white;
+    cursor: pointer;
+}
+
+.readonly-code {
+    padding: 20px;
+    border-radius: 10px;
+    background: #10101c;
+    color: #d9e6ff;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    overflow-wrap: anywhere;
+}
+
+</style>
+
+<script>
+
+function copyCode() {
+
+    const code = document.getElementById("codeContent").textContent;
+
+    navigator.clipboard.writeText(code)
+        .then(() => {
+
+            document.getElementById("copyMessage").textContent =
+                "Code copied successfully!";
+
+        })
+        .catch(() => {
+
+            document.getElementById("copyMessage").textContent =
+                "Unable to copy code.";
+
+        });
+
+}
+
+</script>
+
+{% endblock %}

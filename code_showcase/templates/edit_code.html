@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Code | ShowCase{% endblock %}
+
+{% block content %}
+
+<section class="card">
+
+    <p class="eyebrow">MY COLLECTION</p>
+    <h1>Edit Your Code</h1>
+
+    <form method="POST" class="form-grid">
+
+        <label class="full">
+            Code Title
+            <input
+                type="text"
+                name="title"
+                value="{{ code.title }}"
+                required
+            >
+            <small>The .sr extension will be added automatically.</small>
+        </label>
+
+        <label class="full">
+            Programming Language
+
+            <select name="language" required>
+                {% for language in languages %}
+                <option value="{{ language }}"
+                    {% if code.language == language %}selected{% endif %}>
+                    {{ language }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="full">
+            Your Code
+            <textarea
+                name="code"
+                rows="18"
+                required
+            >{{ code.code }}</textarea>
+        </label>
+
+        <div class="form-actions full">
+            <button type="submit" class="btn">
+                Commit Change
+            </button>
+
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- PROFILE SECTION -->
+
+    <section class="profile-section">
+
+        <h1>My Profile</h1>
+
+        <div class="profile-card">
+
+            {% if user.profile_picture %}
+
+                <img
+                    src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}"
+                    alt="Profile Picture"
+                    class="profile-image"
+                >
+
+            {% else %}
+
+                <div class="profile-placeholder">
+                    {{ user.name[0]|upper }}
+                </div>
+
+            {% endif %}
+
+            <h2>{{ user.name }}</h2>
+
+            <br />
+
+            <p>{{ user.mobile }}</p>
+
+        </div>
+
+        <!-- EDIT PROFILE -->
+
+        <details class="profile-edit">
+
+            <summary>Edit Profile</summary>
+
+            <form
+                action="{{ url_for('update_profile') }}"
+                method="POST"
+                enctype="multipart/form-data"
+            >
+
+                <label>Name</label>
+                <input
+                    type="text"
+                    name="name"
+                    value="{{ user.name }}"
+                    required
+                >
+
+                <label>Age</label>
+                <input
+                    type="number"
+                    name="age"
+                    value="{{ user.age }}"
+                    required
+                >
+
+                <label>Education</label>
+                <input
+                    type="text"
+                    name="education"
+                    value="{{ user.education }}"
+                    required
+                >
+
+                <label>College / Job</label>
+                <input
+                    type="text"
+                    name="college_job"
+                    value="{{ user.college_job or '' }}"
+                >
+
+                <label>Profile Picture</label>
+                <input
+                    type="file"
+                    name="profile_picture"
+                    accept="image/*"
+                >
+
+                <button type="submit">
+                    Save Profile
+                </button>
+
+            </form>
+
+        </details>
+
+    </section>
+
+
+    <!-- CODE COLLECTION -->
+
+    <section class="collection-section">
+
+        <div class="collection-header">
+
+            <h1>My Code Collection</h1>
+
+            <a href="{{ url_for('add_code') }}" class="btn">
+                + Add New Code
+            </a>
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <form
+            action="{{ url_for('profile') }}"
+            method="GET"
+            class="search-form"
+        >
+
+            <input
+                type="text"
+                name="search"
+                placeholder="Search code by title..."
+                value="{{ search }}"
+            >
+
+            <button type="submit">
+                Search
+            </button>
+
+        </form>
+
+
+        <!-- CODE CARDS -->
+
+        <div class="code-grid">
+
+            {% if codes %}
+
+                {% for code in codes %}
+
+                    <div class="code-card">
+
+                        <h3>{{ code.title }}</h3>
+                        <br />
+
+                        <p>
+                            Language:
+                            <strong>{{ code.language }}</strong>
+                        </p>
+                        <br />
+
+                        <div class="code-preview">
+
+                            <pre>{{ code.code[:200] }}{% if code.code|length > 200 %}...{% endif %}</pre>
+
+                        </div>
+
+                        <!-- ACTION BUTTONS -->
+
+                        <div class="code-actions">
+
+                            <a
+                                href="{{ url_for('view_code', code_id=code.id) }}"
+                                class="view-btn"
+                            >
+                                View
+                            </a>
+
+                            <a
+                                href="{{ url_for('edit_code', code_id=code.id) }}"
+                                class="edit-btn"
+                            >
+                             Commit Change
+                            </a>
+
+                            <a
+                                href="{{ url_for('delete_code', code_id=code.id) }}"
+                                class="delete-btn"
+                                onclick="return confirm('Are you sure you want to delete this code?')"
+                            >
+                                Delete
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="empty-state">
+
+                    <h2>No Codes Found</h2>
+
+                    <p>Your code collection is empty.</p>
+
+                    <a href="{{ url_for('add_code') }}">
+                        Add Your First Code
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+    <!-- LOGOUT -->
+
+    <div class="logout-section">
+
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            Logout
+        </a>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.profile-section,
+.collection-section {
+    margin-bottom: 40px;
+}
+
+.profile-card,
+.code-card {
+    padding: 25px;
+    margin: 20px 0;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.profile-image,
+.profile-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: #5145a8;
+}
+
+.profile-edit {
+    margin: 20px 0;
+}
+
+.profile-edit form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 450px;
+    margin-top: 20px;
+}
+
+.profile-edit input,
+.search-form input {
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.collection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.search-form input {
+    flex: 1;
+    min-width: 0;
+}
+
+.code-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.code-preview {
+    max-height: 150px;
+    overflow: hidden;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.35);
+}
+
+.code-preview pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.code-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.code-actions a,
+.collection-header a,
+.search-form button,
+.profile-edit button,
+.logout-btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+.view-btn {
+    background: #087eae;
+    color: white;
+}
+
+.edit-btn {
+    background: #6852c5;
+    color: white;
+}
+
+.delete-btn {
+    background: #c43c55;
+    color: white;
+}
+
+.empty-state {
+    padding: 30px;
+    text-align: center;
+}
+
+.logout-section {
+    margin: 30px 0;
+}
+
+.logout-btn {
+    background: #c43c55;
+    color: white;
+}
+
+</style>
+
+{% endblock %}

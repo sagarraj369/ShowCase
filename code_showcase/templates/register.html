@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | ShowCase{% endblock %}
+
+{% block content %}
+
+<section class="card auth-card">
+
+<p class="eyebrow">GET STARTED</p>
+
+<h1>Create your account</h1>
+
+<p class="muted">
+    Join ShowCase and keep all your code projects together.
+</p>
+
+<form method="POST" enctype="multipart/form-data" class="form-grid">
+
+    <label>
+        Full Name
+        <input
+            type="text"
+            name="name"
+            placeholder="Enter your full name"
+            maxlength="80"
+            required
+        >
+    </label>
+
+    <label>
+        Age
+        <input
+            type="number"
+            name="age"
+            placeholder="Enter your age"
+            min="1"
+            max="120"
+            inputmode="numeric"
+            required
+        >
+    </label>
+
+    <label>
+        Education
+        <input
+            type="text"
+            name="education"
+            placeholder="B.E. Computer Science"
+            required
+        >
+    </label>
+
+    <label>
+        College or Job
+        <input
+            type="text"
+            name="college_job"
+            placeholder="Enter your college or job"
+            required
+        >
+    </label>
+
+    <label class="full">
+        Mobile Number
+        <input
+            type="tel"
+            name="mobile"
+            placeholder="Enter your 10-digit mobile number"
+            pattern="[0-9]{10}"
+            minlength="10"
+            maxlength="10"
+            inputmode="numeric"
+            required
+        >
+    </label>
+
+    <label class="full">
+        Profile Picture
+        <span class="muted inline">(Option)</span>
+
+        <input
+            type="file"
+            name="photo"
+            accept=".png,.jpg,.jpeg,.webp"
+        >
+    </label>
+
+    <button class="btn full" type="submit">
+        Create Account
+    </button>
+
+</form>
+
+<p class="switch">
+    Already have an account?
+    <a href="{{ url_for('login') }}">Log in</a>
+</p>
+
+<p class="tiny muted">
+    Your six-digit password will appear once after registration.
+    Please save it safely.
+</p>
+
+
+</section>
+
+{% endblock %}
