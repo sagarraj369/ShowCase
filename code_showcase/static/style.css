@@ -46,6 +46,8 @@ background: rgba(9, 8, 23, 0.65);
 backdrop-filter: blur(18px);
 }
 
+/* TEXT BRAND */
+
 .brand {
 display: inline-flex;
 align-items: center;
@@ -53,16 +55,6 @@ font-size: 24px;
 font-weight: 800;
 color: white;
 letter-spacing: -1px;
-}
-
-/* WEBSITE LOGO */
-
-.brand img {
-height: 55px;
-width: auto;
-max-width: 200px;
-object-fit: contain;
-display: block;
 }
 
 .brand span {
@@ -488,11 +480,6 @@ border-top: 1px solid var(--border);
 .generated-password {
     font-size: 28px;
     letter-spacing: 5px;
-}
-
-.brand img {
-    height: 45px;
-    max-width: 160px;
 }
 ```
 
