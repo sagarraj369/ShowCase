@@ -1,14 +1,3 @@
-@media (max-width: 650px) {
-    /* Other mobile CSS */
-
-    .brand img {
-        height: 50px;
-        width: auto;
-        object-fit: contain;
-        display: block;
-    }
-}
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -47,6 +36,8 @@ a:hover {
     opacity: 0.8;
 }
 
+/* HEADER */
+
 .topbar {
     width: 100%;
     padding: 22px 7%;
@@ -60,16 +51,32 @@ a:hover {
     font-weight: 800;
     color: white;
     letter-spacing: -1px;
+    display: flex;
+    align-items: center;
+}
+
+/* LOGO */
+
+.brand img {
+    height: 50px;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
+    display: block;
 }
 
 .brand span {
     color: var(--cyan);
 }
 
+/* CONTAINER */
+
 .container {
     width: min(1100px, 90%);
     margin: 45px auto;
 }
+
+/* CARDS */
 
 .card {
     background: var(--card);
@@ -84,6 +91,8 @@ a:hover {
     max-width: 560px;
     margin: 50px auto;
 }
+
+/* HEADINGS */
 
 h1 {
     font-size: clamp(28px, 5vw, 38px);
@@ -111,6 +120,8 @@ h3 {
     line-height: 1.7;
     margin-top: 8px;
 }
+
+/* FORMS */
 
 .form-grid {
     display: grid;
@@ -172,6 +183,8 @@ small {
     font-size: 12px;
 }
 
+/* BUTTONS */
+
 .btn {
     display: inline-flex;
     justify-content: center;
@@ -206,6 +219,8 @@ small {
     padding: 9px 14px;
     font-size: 12px;
 }
+
+/* PASSWORD */
 
 .switch {
     text-align: center;
@@ -253,6 +268,8 @@ small {
     margin-bottom: 22px;
 }
 
+/* MESSAGES */
+
 .flash {
     padding: 14px 18px;
     margin-bottom: 20px;
@@ -260,6 +277,8 @@ small {
     border-radius: 12px;
     background: rgba(139, 92, 246, 0.15);
 }
+
+/* PROFILE */
 
 .profile-card {
     margin-bottom: 35px;
@@ -330,6 +349,8 @@ small {
     font-weight: 700;
 }
 
+/* COLLECTION */
+
 .collection-section {
     margin-top: 35px;
 }
@@ -342,6 +363,8 @@ small {
     margin-bottom: 22px;
 }
 
+/* SEARCH */
+
 .search-form {
     display: flex;
     gap: 12px;
@@ -352,6 +375,8 @@ small {
     flex: 1;
     min-width: 0;
 }
+
+/* CODE SHOWCASE */
 
 .code-grid {
     display: grid;
@@ -395,6 +420,8 @@ small {
     margin-top: 20px;
 }
 
+/* EMPTY STATE */
+
 .empty-state {
     text-align: center;
     padding: 45px 20px;
@@ -403,6 +430,8 @@ small {
 .empty-state p {
     margin: 12px 0 20px;
 }
+
+/* FOOTER */
 
 .logout-section {
     display: flex;
@@ -424,7 +453,10 @@ footer {
     border-top: 1px solid var(--border);
 }
 
+/* MOBILE RESPONSIVE DESIGN */
+
 @media (max-width: 650px) {
+
     .container {
         margin: 25px auto;
     }
@@ -456,4 +488,5 @@ footer {
         font-size: 28px;
         letter-spacing: 5px;
     }
- }
+
+}
