@@ -1,0 +1,52 @@
+# Vercel Web Analytics Integration
+
+## Summary
+Successfully installed and configured Vercel Web Analytics for this Flask project following the official Vercel documentation.
+
+## Implementation Approach
+
+After fetching the latest documentation from https://vercel.com/docs/analytics/quickstart, I determined that this Flask application should use the **vanilla HTML/CDN approach** for Vercel Web Analytics integration, as Flask serves HTML templates directly rather than using a JavaScript framework.
+
+## Changes Made
+
+### Modified Files:
+- **`templates/base.html`** - Added Vercel Web Analytics script tag to the `<head>` section
+
+### Specific Change:
+Added the following script tag to the base template's head section (line 12):
+```html
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+```
+
+## Why This Approach?
+
+1. **Framework Compatibility**: Flask is a Python backend framework that serves HTML templates. The Vercel Analytics documentation recommends using the CDN script approach for HTML-based projects.
+
+2. **Base Template Integration**: The script was added to `templates/base.html` which is the parent template used by all pages in the application, ensuring analytics tracking across the entire site.
+
+3. **Defer Attribute**: The `defer` attribute ensures the script loads asynchronously without blocking page rendering, maintaining optimal performance.
+
+4. **No Dependencies Required**: This approach doesn't require installing npm packages or modifying Python dependencies, keeping the implementation clean and lightweight.
+
+## How It Works
+
+Once the project is deployed to Vercel:
+1. The analytics script will load on every page that extends `base.html`
+2. Page views will be automatically tracked and sent to Vercel's analytics endpoint
+3. Data will appear in the Vercel dashboard after accumulating visitor activity
+
+## Additional Setup Required
+
+To complete the analytics setup:
+1. **Enable in Vercel Dashboard**: Navigate to your project's Analytics tab in the Vercel dashboard and click "Enable"
+2. **Deploy**: Deploy this change to Vercel (the analytics script will only function on deployed sites)
+3. **Verify**: After deployment, check the browser's Network tab for requests to `/_vercel/insights/*` endpoints
+
+## Files Modified:
+- `templates/base.html` - Added analytics script tag
+
+## Notes:
+- No package.json or Python dependencies were modified as the CDN approach doesn't require any
+- The implementation follows the official Vercel documentation for vanilla HTML/static sites
+- All existing functionality remains unchanged - this is a non-invasive addition
+- The script tag was placed in the `<head>` section as recommended by Vercel's documentation
