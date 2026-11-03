@@ -32,6 +32,7 @@ DB_PATH = BASE_DIR / "showcase.db"
 
 UPLOAD_FOLDER = BASE_DIR / "static" / "uploads"
 
+UPLOAD_FOLDER = Path("/tmp/showcase_uploads")
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
