@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
+```
 <title>{% block title %}ShowCase{% endblock %}</title>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='showcase-logo-transparent.png.png') }}">
-
+<!-- CSS Stylesheet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+```
 
 </head>
 
@@ -17,24 +19,30 @@
 
 <header class="topbar">
 
-    <a class="brand" href="{{ url_for('home') }}">
-        <img src="{{ url_for('static', filename='showcase-logo-transparent.png') }}"
-             alt="The ShowCase Logo">
-    </a>
+```
+<!-- Website Logo -->
+<a class="brand" href="{{ url_for('home') }}">
+    <img
+        src="{{ url_for('static', filename='showcase-logo-transparent.png.png') }}"
+        alt="The ShowCase Logo">
+</a>
+```
 
 </header>
 
 <main class="container">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endwith %}
+```
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="flash {{ category }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endwith %}
 
-    {% block content %}{% endblock %}
+{% block content %}{% endblock %}
+```
 
 </main>
 
@@ -45,15 +53,16 @@
 <script>
     document.querySelectorAll("[data-toggle-password]").forEach(button => {
         button.addEventListener("click", () => {
+
             const input = document.getElementById(button.dataset.togglePassword);
 
             input.type = input.type === "password" ? "text" : "password";
 
             button.textContent = input.type === "password" ? "Show" : "Hide";
+
         });
     });
 </script>
-
 
 </body>
 </html>
