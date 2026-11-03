@@ -1,3 +1,14 @@
+@media (max-width: 650px) {
+    /* Other mobile CSS */
+
+    .brand img {
+        height: 50px;
+        width: auto;
+        object-fit: contain;
+        display: block;
+    }
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -445,10 +456,4 @@ footer {
         font-size: 28px;
         letter-spacing: 5px;
     }
-    .brand img {
-    height: 50px;
-    width: auto;
-    object-fit: contain;
-    display: block;
-}
-}
+ }
