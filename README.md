@@ -29,7 +29,7 @@
 | CSS3         | Website Styling      |
 | JavaScript   | Interactive Features |
 | Git & GitHub | Version Control      |
-| Render       | Backend Deployment   |
+| Vercel       | Backend Deployment   |
 
 ---
 
