@@ -445,4 +445,10 @@ footer {
         font-size: 28px;
         letter-spacing: 5px;
     }
+    .brand img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
 }
