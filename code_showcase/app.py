@@ -1,19 +1,17 @@
 import os
 import re
-import sqlite3
 import secrets
 from pathlib import Path
 from contextlib import contextmanager
 from functools import wraps
 
+import psycopg
+from psycopg.rows import dict_row
+from psycopg.errors import UniqueViolation
+
 from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    flash,
-    session
+    Flask, render_template, request,
+    redirect, url_for, flash, session
 )
 
 from werkzeug.security import (
@@ -26,11 +24,14 @@ from werkzeug.security import (
 # CONFIGURATION
 # ==========================================
 
-BASE_DIR = Path(__file__).resolve().parent
+DATABASE_URL = os.environ.get("DATABASE_URL")
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
-DB_PATH = BASE_DIR / "showcase.db"
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is missing.")
 
-UPLOAD_FOLDER = BASE_DIR / "static" / "uploads"
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is missing.")
 
 UPLOAD_FOLDER = Path("/tmp/showcase_uploads")
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -38,12 +39,7 @@ UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
 app = Flask(__name__)
-
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "showcase-development-secret-key"
-)
-
+app.secret_key = SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024
 
 
@@ -52,16 +48,8 @@ app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024
 # ==========================================
 
 LANGUAGES = [
-    "HTML",
-    "Python",
-    "CSS",
-    "JavaScript",
-    "Java",
-    "TypeScript",
-    "C",
-    "C++",
-    "C#",
-    "PHP"
+    "HTML", "Python", "CSS", "JavaScript",
+    "Java", "TypeScript", "C", "C++", "C#", "PHP"
 ]
 
 
@@ -71,21 +59,11 @@ LANGUAGES = [
 
 @contextmanager
 def get_db():
-
-    db = sqlite3.connect(DB_PATH)
-
-    db.row_factory = sqlite3.Row
-
-    try:
+    with psycopg.connect(
+        DATABASE_URL,
+        row_factory=dict_row
+    ) as db:
         yield db
-        db.commit()
-
-    except Exception:
-        db.rollback()
-        raise
-
-    finally:
-        db.close()
 
 
 # ==========================================
@@ -98,7 +76,7 @@ def initialize_database():
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id BIGSERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 age INTEGER NOT NULL,
                 education TEXT NOT NULL,
@@ -109,58 +87,29 @@ def initialize_database():
             )
         """)
 
-        user_columns = [
-            row["name"]
-            for row in db.execute(
-                "PRAGMA table_info(users)"
-            )
-        ]
+        db.execute("""
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS college_job TEXT DEFAULT ''
+        """)
 
-        if "college_job" not in user_columns:
-
-            db.execute("""
-                ALTER TABLE users
-                ADD COLUMN college_job TEXT DEFAULT ''
-            """)
-
-        if "photo" not in user_columns:
-
-            db.execute("""
-                ALTER TABLE users
-                ADD COLUMN photo TEXT
-            """)
+        db.execute("""
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS photo TEXT
+        """)
 
         db.execute("""
             CREATE TABLE IF NOT EXISTS codes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL
+                    REFERENCES users(id) ON DELETE CASCADE,
                 title TEXT NOT NULL,
                 language TEXT NOT NULL,
-                code TEXT NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                code TEXT NOT NULL
             )
         """)
 
 
 initialize_database()
-
-
-# ==========================================
-# LOGIN REQUIRED
-# ==========================================
-
-def login_required(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        user = get_current_user()
-
-        if user is None:
-            session.clear()
-            return redirect(url_for("login"))
-
-        return function(*args, **kwargs)
-
-    return wrapper
 
 
 # ==========================================
@@ -175,15 +124,33 @@ def get_current_user():
         return None
 
     with get_db() as db:
-
         user = db.execute("""
-            SELECT *,
-                   photo AS profile_picture
+            SELECT *, photo AS profile_picture
             FROM users
-            WHERE id = ?
+            WHERE id = %s
         """, (user_id,)).fetchone()
 
     return user
+
+
+# ==========================================
+# LOGIN REQUIRED
+# ==========================================
+
+def login_required(function):
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+
+        user = get_current_user()
+
+        if user is None:
+            session.clear()
+            return redirect(url_for("login"))
+
+        return function(*args, **kwargs)
+
+    return wrapper
 
 
 # ==========================================
@@ -205,13 +172,11 @@ def save_photo(file):
         return None
 
     if not allowed_file(file.filename):
-
         raise ValueError(
             "Only PNG, JPG, JPEG and WEBP images are allowed."
         )
 
     extension = file.filename.rsplit(".", 1)[1].lower()
-
     filename = secrets.token_hex(16) + "." + extension
 
     file.save(UPLOAD_FOLDER / filename)
@@ -235,7 +200,6 @@ def get_uploaded_photo():
 def home():
 
     if "user_id" in session:
-
         return redirect(url_for("profile"))
 
     return redirect(url_for("register"))
@@ -251,72 +215,50 @@ def register():
     if request.method == "POST":
 
         name = request.form.get("name", "").strip()
-
         age = request.form.get("age", "").strip()
-
-        education = request.form.get(
-            "education", ""
-        ).strip()
-
-        college_job = request.form.get(
-            "college_job", ""
-        ).strip()
-
-        mobile = request.form.get(
-            "mobile", ""
-        ).strip()
+        education = request.form.get("education", "").strip()
+        college_job = request.form.get("college_job", "").strip()
+        mobile = request.form.get("mobile", "").strip()
 
         if not name or not age or not education or not mobile:
-
             flash("Please fill all required fields.", "error")
-
             return redirect(url_for("register"))
 
         if not re.fullmatch(r"\d{10}", mobile):
-
             flash(
                 "Mobile number must contain exactly 10 digits.",
                 "error"
             )
-
             return redirect(url_for("register"))
 
         try:
-
             age_number = int(age)
 
             if age_number < 1 or age_number > 120:
                 raise ValueError
 
         except ValueError:
-
             flash("Enter a valid age.", "error")
-
             return redirect(url_for("register"))
 
         try:
 
             photo = save_photo(get_uploaded_photo())
 
-            password = str(
-                secrets.randbelow(900000) + 100000
-            )
+            password = str(secrets.randbelow(900000) + 100000)
 
             password_hash = generate_password_hash(password)
 
             with get_db() as db:
 
-                cursor = db.execute("""
+                new_user = db.execute("""
                     INSERT INTO users (
-                        name,
-                        age,
-                        education,
-                        college_job,
-                        mobile,
-                        password_hash,
-                        photo
+                        name, age, education,
+                        college_job, mobile,
+                        password_hash, photo
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
                 """, (
                     name,
                     age_number,
@@ -325,17 +267,16 @@ def register():
                     mobile,
                     password_hash,
                     photo
-                ))
+                )).fetchone()
 
-                user_id = cursor.lastrowid
+                user_id = new_user["id"]
 
             session["new_pin"] = password
-
             session["new_user_id"] = user_id
 
             return redirect(url_for("show_password"))
 
-        except sqlite3.IntegrityError:
+        except UniqueViolation:
 
             flash(
                 "This mobile number is already registered.",
@@ -357,11 +298,9 @@ def register():
 def show_password():
 
     password = session.pop("new_pin", None)
-
     user_id = session.pop("new_user_id", None)
 
     if not password or not user_id:
-
         return redirect(url_for("login"))
 
     return render_template(
@@ -379,20 +318,15 @@ def login():
 
     if request.method == "POST":
 
-        mobile = request.form.get(
-            "mobile", ""
-        ).strip()
-
-        password = request.form.get(
-            "password", ""
-        ).strip()
+        mobile = request.form.get("mobile", "").strip()
+        password = request.form.get("password", "").strip()
 
         with get_db() as db:
 
             user = db.execute("""
                 SELECT *
                 FROM users
-                WHERE mobile = ?
+                WHERE mobile = %s
             """, (mobile,)).fetchone()
 
         if user and check_password_hash(
@@ -401,7 +335,6 @@ def login():
         ):
 
             session.clear()
-
             session["user_id"] = user["id"]
 
             flash("Login successful.", "success")
@@ -438,8 +371,8 @@ def profile():
             codes = db.execute("""
                 SELECT *
                 FROM codes
-                WHERE user_id = ?
-                AND title LIKE ?
+                WHERE user_id = %s
+                AND title ILIKE %s
                 ORDER BY id DESC
             """, (
                 session["user_id"],
@@ -451,7 +384,7 @@ def profile():
             codes = db.execute("""
                 SELECT *
                 FROM codes
-                WHERE user_id = ?
+                WHERE user_id = %s
                 ORDER BY id DESC
             """, (
                 session["user_id"],
@@ -474,38 +407,25 @@ def profile():
 def update_profile():
 
     name = request.form.get("name", "").strip()
-
     age = request.form.get("age", "").strip()
-
-    education = request.form.get(
-        "education", ""
-    ).strip()
-
-    college_job = request.form.get(
-        "college_job", ""
-    ).strip()
+    education = request.form.get("education", "").strip()
+    college_job = request.form.get("college_job", "").strip()
 
     if not name or not age or not education:
-
         flash("Please fill all required fields.", "error")
-
         return redirect(url_for("profile"))
 
     try:
-
         age_number = int(age)
 
         if age_number < 1 or age_number > 120:
             raise ValueError
 
     except ValueError:
-
         flash("Enter a valid age.", "error")
-
         return redirect(url_for("profile"))
 
     user = get_current_user()
-
     photo = user["photo"]
 
     try:
@@ -518,19 +438,18 @@ def update_profile():
     except ValueError as error:
 
         flash(str(error), "error")
-
         return redirect(url_for("profile"))
 
     with get_db() as db:
 
         db.execute("""
             UPDATE users
-            SET name = ?,
-                age = ?,
-                education = ?,
-                college_job = ?,
-                photo = ?
-            WHERE id = ?
+            SET name = %s,
+                age = %s,
+                education = %s,
+                college_job = %s,
+                photo = %s
+            WHERE id = %s
         """, (
             name,
             age_number,
@@ -555,28 +474,16 @@ def add_code():
 
     if request.method == "POST":
 
-        title = request.form.get(
-            "title", ""
-        ).strip()
-
-        language = request.form.get(
-            "language", ""
-        ).strip()
-
-        code = request.form.get(
-            "code", ""
-        ).strip()
+        title = request.form.get("title", "").strip()
+        language = request.form.get("language", "").strip()
+        code = request.form.get("code", "").strip()
 
         if not title or not language or not code:
-
             flash("Please fill all fields.", "error")
-
             return redirect(url_for("add_code"))
 
         if language not in LANGUAGES:
-
             flash("Select a supported language.", "error")
-
             return redirect(url_for("add_code"))
 
         if not title.endswith(".sr"):
@@ -586,12 +493,9 @@ def add_code():
 
             db.execute("""
                 INSERT INTO codes (
-                    user_id,
-                    title,
-                    language,
-                    code
+                    user_id, title, language, code
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s)
             """, (
                 session["user_id"],
                 title,
@@ -625,45 +529,31 @@ def edit_code(code_id):
         item = db.execute("""
             SELECT *
             FROM codes
-            WHERE id = ?
-            AND user_id = ?
+            WHERE id = %s
+            AND user_id = %s
         """, (
             code_id,
             session["user_id"]
         )).fetchone()
 
     if not item:
-
         flash("Code not found.", "error")
-
         return redirect(url_for("profile"))
 
     if request.method == "POST":
 
-        title = request.form.get(
-            "title", ""
-        ).strip()
-
-        language = request.form.get(
-            "language", ""
-        ).strip()
-
-        code = request.form.get(
-            "code", ""
-        ).strip()
+        title = request.form.get("title", "").strip()
+        language = request.form.get("language", "").strip()
+        code = request.form.get("code", "").strip()
 
         if not title or not language or not code:
-
             flash("Please fill all fields.", "error")
-
             return redirect(
                 url_for("edit_code", code_id=code_id)
             )
 
         if language not in LANGUAGES:
-
             flash("Select a supported language.", "error")
-
             return redirect(
                 url_for("edit_code", code_id=code_id)
             )
@@ -675,11 +565,11 @@ def edit_code(code_id):
 
             db.execute("""
                 UPDATE codes
-                SET title = ?,
-                    language = ?,
-                    code = ?
-                WHERE id = ?
-                AND user_id = ?
+                SET title = %s,
+                    language = %s,
+                    code = %s
+                WHERE id = %s
+                AND user_id = %s
             """, (
                 title,
                 language,
@@ -704,7 +594,7 @@ def edit_code(code_id):
 
 
 # ==========================================
-# VIEW CODE - READ ONLY MODE
+# VIEW CODE
 # ==========================================
 
 @app.route("/view_code/<int:code_id>")
@@ -716,17 +606,15 @@ def view_code(code_id):
         item = db.execute("""
             SELECT *
             FROM codes
-            WHERE id = ?
-            AND user_id = ?
+            WHERE id = %s
+            AND user_id = %s
         """, (
             code_id,
             session["user_id"]
         )).fetchone()
 
     if not item:
-
         flash("Code not found.", "error")
-
         return redirect(url_for("profile"))
 
     return render_template(
@@ -750,19 +638,16 @@ def delete_code(code_id):
 
         result = db.execute("""
             DELETE FROM codes
-            WHERE id = ?
-            AND user_id = ?
+            WHERE id = %s
+            AND user_id = %s
         """, (
             code_id,
             session["user_id"]
         ))
 
     if result.rowcount:
-
         flash("Code deleted successfully.", "success")
-
     else:
-
         flash("Code not found.", "error")
 
     return redirect(url_for("profile"))
